@@ -20,7 +20,7 @@ DATA_PATH = Path(__file__).parent / "starbucks.csv"
 
 
 try:
-    df = pd.read_csv(DATA_PATH, encoding="cp1252")
+    df = pd.read_csv(DATA_PATH, encoding="latin1")
 except Exception as error:
     st.error("Could not load starbucks.csv.")
     st.write(str(error))
