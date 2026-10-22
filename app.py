@@ -19,11 +19,11 @@ DATA_PATH = Path(__file__).parent / "starbucks.csv"
 
 
 
-try:df = pd.read_csv(
+df = pd.read_csv(
     DATA_PATH,
     encoding="latin1",
-    sep=None,
-    engine="python"
+    on_bad_lines="warn"
+)
 )
 except Exception as error:
     st.error("Could not load starbucks.csv.")
