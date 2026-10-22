@@ -1,44 +1,75 @@
 
 import streamlit as st
 import pandas as pd
-import joblib
-import os
+from pathlib import Path
 
 st.set_page_config(
-    page_title="Starbucks Drink Predictor",
-    page_icon="☕",
-    layout="centered"
+    page_title="Starbucks Calories Predictor",
+    page_icon="☕"
 )
 
-st.title("☕ Starbucks Calories Predictor")
-
+st.title("☕ Starbucks Calories Explorer")
 st.write(
-    "Enter the calories and nutrition details "
-    "of a Starbucks drink to predict its beverage category."
+    "Select a Starbucks drink to view its calories "
+    "and nutritional information."
 )
 
-# Load the trained model
-MODEL_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "starbucks_decision_tree.pkl"
-)
-
-@st.cache_resource
-def load_model():
-    return joblib.load(MODEL_PATH)
+# Load the dataset
+DATA_PATH = Path(__file__).parent / "starbucks.csv"
 
 try:
-    model = load_model()
-except Exception as e:
-    st.error(
-        "Model could not be loaded. "
-        "Please check that the PKL file is in the repository."
-    )
+    df = pd.read_csv(DATA_PATH)
+except Exception as error:
+    st.error("Could not load starbucks.csv.")
+    st.write(str(error))
     st.stop()
 
-# Input features — keep the same order as training
-features = [
-    "Calories",
+# Clean column names and calorie values
+df.columns = df.columns.str.strip()
+
+if "Beverage" not in df.columns or "Calories" not in df.columns:
+    st.error("The dataset must contain Beverage and Calories columns.")
+    st.stop()
+
+df["Calories"] = pd.to_numeric(df["Calories"], errors="coerce")
+df = df.dropna(subset=["Beverage", "Calories"]).copy()
+
+# Make each drink preparation selectable
+if "Beverage_prep" in df.columns:
+    df["Drink_Option"] = (
+        df["Beverage"].astype(str)
+        + " — "
+        + df["Beverage_prep"].fillna("Standard").astype(str)
+    )
+else:
+    df["Drink_Option"] = df["Beverage"].astype(str)
+
+drink_options = sorted(df["Drink_Option"].unique())
+
+selected_drink = st.selectbox(
+    "Choose a Starbucks drink",
+    drink_options
+)
+
+# Get the selected drink's dataset row
+drink_data = df[df["Drink_Option"] == selected_drink]
+
+# If there are multiple matching rows, show the first one
+drink = drink_data.iloc[0]
+
+st.subheader("Nutrition Information")
+
+st.metric(
+    label="Calories",
+    value=f"{drink['Calories']:g} kcal"
+)
+
+if "Beverage_category" in df.columns:
+    st.write("**Beverage Category:**", drink["Beverage_category"])
+
+st.write("**Selected Drink:**", selected_drink)
+
+nutrition_columns = [
     "Total Fat (g)",
     "Trans Fat (g)",
     "Saturated Fat (g)",
@@ -55,29 +86,21 @@ features = [
     "Caffeine (mg)"
 ]
 
-st.subheader("Enter Drink Nutrition")
+available_columns = [
+    col for col in nutrition_columns if col in df.columns
+]
 
-with st.form("drink_form"):
-    values = {}
+if available_columns:
+    st.subheader("Other Nutrition Details")
 
-    for feature in features:
-        values[feature] = st.number_input(
-            feature,
-            min_value=0.0,
-            value=0.0,
-            step=1.0
-        )
+    nutrition_data = pd.DataFrame({
+        "Nutrient": available_columns,
+        "Value": [drink[col] for col in available_columns]
+    })
 
-    submitted = st.form_submit_button("Predict Category")
+    st.dataframe(nutrition_data, hide_index=True)
 
-if submitted:
-    input_data = pd.DataFrame(
-        [[values[f] for f in features]],
-        columns=features
-    )
-
-    prediction = model.predict(input_data)
-
-    st.success("Prediction completed!")
-    st.subheader("Predicted Beverage Category")
-    st.write(str(prediction[0]))
+st.caption(
+    "Values are taken from the uploaded Starbucks dataset "
+    "and may vary by drink preparation or serving size."
+)
