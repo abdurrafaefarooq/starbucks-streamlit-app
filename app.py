@@ -10,10 +10,11 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("☕ Starbucks Drink Predictor")
+st.title("☕ Starbucks Calories Predictor")
+
 st.write(
-    "Enter the nutritional values below "
-    "to predict the beverage category."
+    "Enter the calories and nutrition details "
+    "of a Starbucks drink to predict its beverage category."
 )
 
 # Load the trained model
