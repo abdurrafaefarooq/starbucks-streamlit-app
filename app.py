@@ -33,8 +33,6 @@ except Exception as error:
     st.write(str(error))
     st.stop()
 
-p()
-
 # Clean column names and calorie values
 df.columns = df.columns.str.strip()
 
