@@ -35,7 +35,7 @@ except Exception as error:
 
 # Clean column names and calorie values
 df.columns = df.columns.str.strip()
-
+st.write("CSV columns:", df.columns.tolist())
 if "Beverage" not in df.columns or "Calories" not in df.columns:
     st.error("The dataset must contain Beverage and Calories columns.")
     st.stop()
